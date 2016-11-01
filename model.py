@@ -65,7 +65,7 @@ d_b_out = bias_variable([1])
 d_out = tf.nn.sigmoid(tf.matmul(d_h_conv3_flat, d_W_out)+d_b_out)
 d_out_fake = tf.nn.sigmoid(tf.matmul(d_h_conv3_flat_fake, d_W_out)+d_b_out)
 
-d_loss = tf.reduce_mean(tf.log(d_out) + tf.log(1-d_out_fake))
+d_loss = 0-tf.reduce_mean(tf.log(d_out) + tf.log(1-d_out_fake))
 d_trainstep = tf.train.AdamOptimizer(learning_rate = 0.0002, beta1=0.5).minimize(d_loss)
 
 #generator
@@ -80,12 +80,18 @@ g_h_dconv1 = tf.reshape(g_layer1, [-1,4,4,512])
 
 g_W_dconv2 = weight_variable([5, 5, 256, 512])
 g_b_dconv2 = bias_variable([256])
-g_h_dconv2 = tf.nn.relu(tf.nn.conv2d_transpose(g_h_dconv1, g_W_dconv2, [b,7,7,256], strides=[1,2,2,1], padding='SAME') + g_b_dconv2)
+g_dconv2 = tf.nn.conv2d_transpose(g_h_dconv1, g_W_dconv2, [b,7,7,256], strides=[1,2,2,1], padding='SAME') + g_b_dconv2
+g_dconv2_mean, g_dconv2_var = tf.nn.moments(g_dconv2, axes=[0, 1, 2])
+g_dconv2_bn = tf.nn.batch_normalization(g_dconv2, g_dconv2_mean, g_dconv2_var, None, None, variance_epsilon=0.00005)
+g_h_dconv2 = tf.nn.relu(g_dconv2_bn)
 
 
 g_W_dconv3 = weight_variable([5, 5, 128 ,256])
 g_b_dconv3 = bias_variable([128])
-g_h_dconv3 = tf.nn.relu(tf.nn.conv2d_transpose(g_h_dconv2, g_W_dconv3, [b,14,14,128], strides=[1,2,2,1], padding='SAME') + g_b_dconv3)
+g_dconv3 = tf.nn.conv2d_transpose(g_h_dconv2, g_W_dconv3, [b,14,14,128], strides=[1,2,2,1], padding='SAME') + g_b_dconv3
+g_dconv3_mean, g_dconv3_var = tf.nn.moments(g_dconv3, axes=[0, 1, 2])
+g_dconv3_bn = tf.nn.batch_normalization(g_dconv3, g_dconv3_mean, g_dconv3_var, None, None, variance_epsilon=0.00005)
+g_h_dconv3 = tf.nn.relu(g_dconv3_bn)
 
 g_W_dconv4 = weight_variable([5, 5, 1,128])
 g_b_dconv4 = bias_variable([1])
@@ -95,10 +101,14 @@ g_d_conv2d_conv1_fake = tf.nn.conv2d(g_h_dconv4*255, d_W_conv1, strides=[1, 2, 2
 g_d_h_conv1_fake =  tf.maximum(0.2*g_d_conv2d_conv1_fake, g_d_conv2d_conv1_fake)
 
 g_d_conv2d_conv2_fake = tf.nn.conv2d(g_d_h_conv1_fake, d_W_conv2, strides=[1, 2, 2, 1], padding='SAME') + d_b_conv2
-g_d_h_conv2_fake =  tf.maximum(0.2*g_d_conv2d_conv2_fake, g_d_conv2d_conv2_fake)
+g_d_conv2d_conv2_mean_f, g_d_conv2d_conv2_var_f = tf.nn.moments(g_d_conv2d_conv2_fake, axes=[0, 1, 2])
+g_d_conv2d_conv2_fake_bn = tf.nn.batch_normalization(g_d_conv2d_conv2_fake, g_d_conv2d_conv2_mean_f, g_d_conv2d_conv2_var_f, None, None, variance_epsilon=0.00005)
+g_d_h_conv2_fake =  tf.maximum(0.2*g_d_conv2d_conv2_fake_bn, g_d_conv2d_conv2_fake_bn)
 
 g_d_conv2d_conv3_fake = tf.nn.conv2d(g_d_h_conv2_fake, d_W_conv3, strides=[1, 2, 2, 1], padding='SAME') + d_b_conv3
-g_d_h_conv3_fake =  tf.maximum(0.2*g_d_conv2d_conv3_fake, g_d_conv2d_conv3_fake)
+g_d_conv2d_conv3_mean_f, g_d_conv2d_conv3_var_f = tf.nn.moments(g_d_conv2d_conv3_fake, axes=[0, 1, 2])
+g_d_conv2d_conv3_fake_bn = tf.nn.batch_normalization(g_d_conv2d_conv3_fake, g_d_conv2d_conv3_mean_f, g_d_conv2d_conv3_var_f, None, None, variance_epsilon=0.00005)
+g_d_h_conv3_fake =  tf.maximum(0.2*g_d_conv2d_conv3_fake_bn, g_d_conv2d_conv3_fake_bn)
 
 g_d_h_conv3_flat_fake = tf.reshape(g_d_h_conv3_fake, [-1, 4*4*512])
 g_d_out_fake = tf.nn.sigmoid(tf.matmul(g_d_h_conv3_flat_fake, d_W_out)+d_b_out)
@@ -110,6 +120,7 @@ g_trainstep = tf.train.AdamOptimizer(learning_rate = 0.0002, beta1=0.5).minimize
 sess.run(tf.initialize_all_variables())
 
 for i in range(100):
+    print "iteration", i
     batch_real = mnist.train.next_batch(128)[0]
     d_batch_fake = np.random.random_sample((128,100))
 
@@ -119,7 +130,7 @@ for i in range(100):
     print "discriminator loss",dl
 
     g_batch_fake = np.random.random_sample((128,100))
-    _, gl = sess.run([g_trainstep, g_loss], feed_dict = {x_generator: g_batch_fake, b: 128})
+    x, gl = sess.run([g_trainstep, g_loss], feed_dict = {x_generator: g_batch_fake, b: 128})
 
     print "generator loss", gl
 
