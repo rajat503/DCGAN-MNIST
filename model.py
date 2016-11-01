@@ -1,7 +1,3 @@
-'''
-TODO: batch-norm
-'''
-
 import tensorflow as tf
 import numpy as np
 
@@ -36,17 +32,25 @@ d_h_conv1_fake =  tf.maximum(0.2*d_conv2d_conv1_fake, d_conv2d_conv1_fake)
 d_W_conv2 = weight_variable([5,5,128,256])
 d_b_conv2 = bias_variable([256])
 d_conv2d_conv2 = tf.nn.conv2d(d_h_conv1, d_W_conv2, strides=[1, 2, 2, 1], padding='SAME') + d_b_conv2
-d_h_conv2 =  tf.maximum(0.2*d_conv2d_conv2, d_conv2d_conv2)
+d_conv2d_conv2_mean, d_conv2d_conv2_var = tf.nn.moments(d_conv2d_conv2, axes=[0, 1, 2])
+d_conv2d_conv2_bn = tf.nn.batch_normalization(d_conv2d_conv2, d_conv2d_conv2_mean, d_conv2d_conv2_var, None, None, variance_epsilon=0.00005)
+d_h_conv2 =  tf.maximum(0.2*d_conv2d_conv2_bn, d_conv2d_conv2_bn)
 d_conv2d_conv2_fake = tf.nn.conv2d(d_h_conv1_fake, d_W_conv2, strides=[1, 2, 2, 1], padding='SAME') + d_b_conv2
-d_h_conv2_fake =  tf.maximum(0.2*d_conv2d_conv2_fake, d_conv2d_conv2_fake)
+d_conv2d_conv2_mean_f, d_conv2d_conv2_var_f = tf.nn.moments(d_conv2d_conv2_fake, axes=[0, 1, 2])
+d_conv2d_conv2_fake_bn = tf.nn.batch_normalization(d_conv2d_conv2_fake, d_conv2d_conv2_mean_f, d_conv2d_conv2_var_f, None, None, variance_epsilon=0.00005)
+d_h_conv2_fake =  tf.maximum(0.2*d_conv2d_conv2_fake_bn, d_conv2d_conv2_fake_bn)
 
 
 d_W_conv3 = weight_variable([5,5,256,512])
 d_b_conv3 = bias_variable([512])
 d_conv2d_conv3 = tf.nn.conv2d(d_h_conv2, d_W_conv3, strides=[1, 2, 2, 1], padding='SAME') + d_b_conv3
-d_h_conv3 =  tf.maximum(0.2*d_conv2d_conv3, d_conv2d_conv3)
+d_conv2d_conv3_mean, d_conv2d_conv3_var = tf.nn.moments(d_conv2d_conv3, axes=[0, 1, 2])
+d_conv2d_conv3_bn = tf.nn.batch_normalization(d_conv2d_conv3, d_conv2d_conv3_mean, d_conv2d_conv3_var, None, None, variance_epsilon=0.00005)
+d_h_conv3 =  tf.maximum(0.2*d_conv2d_conv3_bn, d_conv2d_conv3_bn)
 d_conv2d_conv3_fake = tf.nn.conv2d(d_h_conv2_fake, d_W_conv3, strides=[1, 2, 2, 1], padding='SAME') + d_b_conv3
-d_h_conv3_fake =  tf.maximum(0.2*d_conv2d_conv3_fake, d_conv2d_conv3_fake)
+d_conv2d_conv3_mean_f, d_conv2d_conv3_var_f = tf.nn.moments(d_conv2d_conv3_fake, axes=[0, 1, 2])
+d_conv2d_conv3_fake_bn = tf.nn.batch_normalization(d_conv2d_conv3_fake, d_conv2d_conv3_mean_f, d_conv2d_conv3_var_f, None, None, variance_epsilon=0.00005)
+d_h_conv3_fake =  tf.maximum(0.2*d_conv2d_conv3_fake_bn, d_conv2d_conv3_fake_bn)
 
 # d_W_conv4 = weight_variable([5,5,512,1024])
 # d_b_conv4 = bias_variable([1024])
