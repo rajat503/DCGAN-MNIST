@@ -52,11 +52,27 @@ d_out = tf.nn.sigmoid(tf.matmul(d_h_conv3_flat, d_W_out)+d_b_out)
 
 
 #generator
-# x_generator = tf.placeholder(tf.float32, shape=[None, 100])
-#
+x_generator = tf.placeholder(tf.float32, shape=[None, 100])
+b = tf.placeholder(tf.int32)
+
+g_W_input = weight_variable([100, 4*4*512])
+g_b_input = bias_variable([4*4*512])
+g_layer1 = tf.matmul(x_generator, g_W_input)+g_b_input
+
+g_h_dconv1 = tf.reshape(g_layer1, [-1,4,4,512])
+
+g_W_dconv2 = weight_variable([5, 5, 256, 512])
+g_b_dconv2 = bias_variable([256])
+g_h_dconv2 = tf.nn.conv2d_transpose(g_h_dconv1, g_W_dconv2, [b,7,7,256], strides=[1,2,2,1], padding='SAME') + g_b_dconv2
 
 
+g_W_dconv3 = weight_variable([5, 5, 128 ,256])
+g_b_dconv3 = bias_variable([128])
+g_h_dconv3 = tf.nn.conv2d_transpose(g_h_dconv2, g_W_dconv3, [b,14,14,128], strides=[1,2,2,1], padding='SAME') + g_b_dconv3
 
+g_W_dconv4 = weight_variable([5, 5, 3 ,128])
+g_b_dconv4 = bias_variable([3])
+g_h_dconv4 = tf.nn.conv2d_transpose(g_h_dconv3, g_W_dconv4, [b,28,28,3], strides=[1,2,2,1], padding='SAME') + g_b_dconv4
 
 
 
